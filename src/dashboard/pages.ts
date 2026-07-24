@@ -362,6 +362,7 @@ export function nav(_activePath = '/'): string {
       <a href="/#how-it-works">Docs</a>
       <a href="/docs/html">Tutorials</a>
       <a href="/#pricing">Pricing</a>
+      <a href="https://github.com/hiendoxuan195/snapog" rel="noopener">GitHub</a>
       <a href="/register" class="btn btn-primary">Get API Key →</a>
     </div>
   </nav>`;
@@ -372,6 +373,7 @@ export function footer(): string {
   <footer class="footer">
     <div class="container">
       snapog.dev — OG images at the edge. Built with ♥ on Cloudflare Workers.
+      Open source under MIT — <a href="https://github.com/hiendoxuan195/snapog" rel="noopener">github.com/hiendoxuan195/snapog</a>.
     </div>
   </footer>`;
 }
