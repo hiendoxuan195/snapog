@@ -305,6 +305,18 @@ app.get('/sitemap.xml', c => {
   });
 });
 
+// IndexNow host verification (Bing / Yandex / Seznam / Naver instant indexing).
+// The key is public by protocol design — search engines fetch this file over
+// plain HTTP to verify host ownership, so it is not a secret and may live in
+// source. Submit new/changed URLs with:
+//   POST https://api.indexnow.org/indexnow  {host, key, urlList}
+const INDEXNOW_KEY = '11a4e9c5b2c07cd6b4e365ffc096c643';
+app.get(`/${INDEXNOW_KEY}.txt`, () =>
+  new Response(INDEXNOW_KEY, {
+    headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=86400' },
+  })
+);
+
 // ── Registration ──────────────────────────────────────────────────────────────
 app.get('/register', c => {
   const tier = c.req.query('tier');
