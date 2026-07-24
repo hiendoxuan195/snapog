@@ -402,6 +402,7 @@ export function nav(_activePath = '/'): string {
       <a href="/#how-it-works">Docs</a>
       <a href="/docs/html">Tutorials</a>
       <a href="/#pricing">Pricing</a>
+      <a href="/compare">Compare</a>
       <a href="https://github.com/hiendoxuan195/snapog" rel="noopener">GitHub</a>
       <a href="/register" class="btn btn-primary">Get API Key →</a>
     </div>

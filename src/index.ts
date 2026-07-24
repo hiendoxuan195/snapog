@@ -21,6 +21,7 @@ import {
   jekyllTutorialPage,
   astroTutorialPage,
 } from './docs/tutorial-pages-ssg';
+import { comparePage } from './docs/compare-page';
 import type { ApiKey, Env, OGParams, Tier } from './types';
 import { TIER_LIMITS } from './types';
 import { getCachedImage, putCachedImage } from './og-cache';
@@ -282,6 +283,11 @@ app.get('/docs/astro', c =>
   tutorialResponse(astroTutorialPage(new URL(c.req.url).origin))
 );
 
+// Pricing comparison — same caching profile as tutorials (static, no auth)
+app.get('/compare', c =>
+  tutorialResponse(comparePage(new URL(c.req.url).origin))
+);
+
 // ── SEO infrastructure ────────────────────────────────────────────────────────
 // /dashboard is keyed by secret query param — keep it out of search indexes.
 // /og stays crawlable: social crawlers must be able to fetch og:image URLs.
@@ -295,13 +301,41 @@ app.get('/robots.txt', c => {
 
 app.get('/sitemap.xml', c => {
   const origin = new URL(c.req.url).origin;
-  const paths = ['/', '/register', ...Object.values(TUTORIAL_INDEX).map(t => t.href)];
+  const paths = ['/', '/register', '/compare', ...Object.values(TUTORIAL_INDEX).map(t => t.href)];
   const urls = paths
     .map(p => `  <url><loc>${origin}${p}</loc></url>`)
     .join('\n');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
   return new Response(xml, {
     headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=86400' },
+  });
+});
+
+// llms.txt (llmstxt.org) — a compact site index for AI assistants and LLM
+// crawlers, the same way robots.txt/sitemap.xml serve search engines.
+app.get('/llms.txt', c => {
+  const origin = new URL(c.req.url).origin;
+  const tutorials = Object.values(TUTORIAL_INDEX)
+    .map(t => `- [${t.t}](${origin}${t.href})`)
+    .join('\n');
+  const txt = `# SnapOG
+
+> Open Graph image generation API on Cloudflare's edge. One GET request returns a cached 1200×630 PNG for any page title — no build step, no design tool, no React runtime. Free tier: 100 fresh renders/month (cached serves are free and unlimited). Open source (MIT).
+
+Works anywhere you can edit a meta tag: Hugo, Jekyll, Astro, Ghost, Webflow, plain HTML. API: GET ${origin}/og?title=...&key=sk_... (params: title, description, author, domain, tag, template=default|blog|article, theme=dark|light).
+
+## Docs
+
+${tutorials}
+- [OG image API pricing comparison — SnapOG vs image.social vs Bannerbear](${origin}/compare)
+
+## Optional
+
+- [Get a free API key](${origin}/register)
+- [Source code on GitHub](https://github.com/hiendoxuan195/snapog)
+`;
+  return new Response(txt, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' },
   });
 });
 
