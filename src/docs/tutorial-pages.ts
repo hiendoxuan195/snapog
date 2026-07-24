@@ -139,7 +139,7 @@ function escapeHtml(s: string): string {
 
 // Code block with working copy button. Content is escaped here, and the copy
 // script reads pre.textContent, so what you see is exactly what you copy.
-function codeBlock(lang: string, code: string): string {
+export function codeBlock(lang: string, code: string): string {
   return `
       <div class="code-block tut-code">
         <div class="code-block-header">
@@ -155,7 +155,7 @@ function codeBlock(lang: string, code: string): string {
       </div>`;
 }
 
-function step(num: string, title: string, body: string): string {
+export function step(num: string, title: string, body: string): string {
   return `
       <div class="step">
         <div class="step-num">${num}</div>
@@ -208,12 +208,15 @@ function ctaSection(): string {
       </div>`;
 }
 
-type TutorialSlug = 'ghost' | 'webflow' | 'html';
+export type TutorialSlug = 'ghost' | 'webflow' | 'html' | 'hugo' | 'jekyll' | 'astro';
 
-const TUTORIAL_INDEX: Record<TutorialSlug, { href: string; k: string; t: string }> = {
+export const TUTORIAL_INDEX: Record<TutorialSlug, { href: string; k: string; t: string }> = {
   ghost:   { href: '/docs/ghost',   k: 'docs / ghost',   t: 'Add auto-generated OG images to your Ghost blog' },
   webflow: { href: '/docs/webflow', k: 'docs / webflow', t: 'Auto OG images for Webflow sites' },
   html:    { href: '/docs/html',    k: 'docs / html',    t: 'Add OG images to any HTML site in 2 minutes' },
+  hugo:    { href: '/docs/hugo',    k: 'docs / hugo',    t: 'Dynamic OG images for Hugo sites — no build step' },
+  jekyll:  { href: '/docs/jekyll',  k: 'docs / jekyll',  t: 'Auto OG images for Jekyll and GitHub Pages blogs' },
+  astro:   { href: '/docs/astro',   k: 'docs / astro',   t: 'OG images for Astro without satori or build plugins' },
 };
 
 function crossLinks(current: TutorialSlug): string {
@@ -249,7 +252,7 @@ const COPY_SCRIPT = `
     });
   </script>`;
 
-function tutorialShell(opts: {
+export function tutorialShell(opts: {
   slug: TutorialSlug;
   pageTitle: string;
   manRef: string;
@@ -258,6 +261,8 @@ function tutorialShell(opts: {
   facts: string;
   content: string;
   demoTemplate: 'default' | 'blog' | 'article';
+  origin?: string;
+  metaDescription?: string;
 }): string {
   const body = `
   ${nav()}
@@ -285,7 +290,11 @@ function tutorialShell(opts: {
   ${footer()}
   ${COPY_SCRIPT}`;
 
-  return layout(opts.pageTitle, body, `<style>${TUTORIAL_CSS}</style>`);
+  return layout(opts.pageTitle, body, `<style>${TUTORIAL_CSS}</style>`, {
+    description: opts.metaDescription,
+    origin: opts.origin,
+    path: `/docs/${opts.slug}`,
+  });
 }
 
 // ─── /docs/html — any HTML site ──────────────────────────────────────────────
@@ -359,6 +368,9 @@ curl "${origin}/og?title=Hello+World&domain=yoursite.com&key=sk_YOUR_KEY" \\
     facts: `<span>time <b>~2 min</b></span><span>difficulty <b>copy/paste</b></span><span>works with <b>any site or framework</b></span>`,
     content,
     demoTemplate: 'default',
+    origin,
+    metaDescription:
+      'Add auto-generated Open Graph images to any HTML site in 2 minutes: paste two meta tags, no build step, no plugin, no design tool.',
   });
 }
 
@@ -458,6 +470,9 @@ export function ghostTutorialPage(origin: string): string {
     facts: `<span>time <b>~5 min</b></span><span>plugin <b>none</b></span><span>works with <b>Ghost 5.x themes</b></span>`,
     content,
     demoTemplate: 'blog',
+    origin,
+    metaDescription:
+      'Auto-generate OG share images for every Ghost post: paste a snippet per post or patch your theme once. No plugin, works with Ghost 5.x.',
   });
 }
 
@@ -532,5 +547,8 @@ export function webflowTutorialPage(origin: string): string {
     facts: `<span>time <b>~5 min</b></span><span>custom code <b>not required</b></span><span>works with <b>CMS collections</b></span>`,
     content,
     demoTemplate: 'article',
+    origin,
+    metaDescription:
+      'Generate OG images for Webflow pages and CMS collections using the built-in Open Graph Image URL field. No custom code, no paid add-on.',
   });
 }

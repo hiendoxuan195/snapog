@@ -337,14 +337,54 @@ const CSS = `
   }
 `;
 
-export function layout(title: string, body: string, extraHead = ''): string {
+const DEFAULT_DESCRIPTION =
+  'Generate stunning Open Graph images via API. Hosted on Cloudflare edge, cached globally, delivered in milliseconds.';
+
+// Optional per-page SEO metadata. When `origin` + `path` are given the page
+// gets a canonical URL plus og/twitter card tags — the og:image is a live
+// response from our own /og endpoint (the product demos itself).
+export interface PageMeta {
+  description?: string;
+  origin?: string;
+  path?: string;
+  noindex?: boolean;
+}
+
+export function layout(
+  title: string,
+  body: string,
+  extraHead = '',
+  meta: PageMeta = {}
+): string {
+  const description = meta.description ?? DEFAULT_DESCRIPTION;
+  const fullTitle = `${title} — SnapOG`;
+  let seoTags = '';
+  if (meta.noindex) {
+    seoTags += `\n  <meta name="robots" content="noindex" />`;
+  }
+  if (meta.origin && meta.path) {
+    const canonical = `${meta.origin}${meta.path}`;
+    const ogImage = `${meta.origin}/og?key=demo&template=default`;
+    seoTags += `
+  <link rel="canonical" href="${canonical}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="SnapOG" />
+  <meta property="og:title" content="${fullTitle}" />
+  <meta property="og:description" content="${description}" />
+  <meta property="og:url" content="${canonical}" />
+  <meta property="og:image" content="${ogImage}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="${ogImage}" />`;
+  }
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${title} — SnapOG</title>
-  <meta name="description" content="Generate stunning Open Graph images via API. Hosted on Cloudflare edge, cached globally, delivered in milliseconds." />
+  <title>${fullTitle}</title>
+  <meta name="description" content="${description}" />${seoTags}
   <style>${CSS}</style>
   ${extraHead}
 </head>
@@ -379,8 +419,6 @@ export function footer(): string {
 }
 
 export function landingPage(host: string): string {
-  void host; // used in template strings below
-
   const body = `
   ${nav('/')}
 
@@ -585,7 +623,10 @@ export function landingPage(host: string): string {
     });
   </script>`;
 
-  return layout('Generate OG images at the edge', body);
+  return layout('Generate OG images at the edge', body, '', {
+    origin: `https://${host}`,
+    path: '/',
+  });
 }
 
 export function registerPage(error?: string, tier?: string): string {
@@ -692,7 +733,7 @@ export function keyCreatedPage(rawKey: string, email: string, tier: string, orig
     });
   </script>`;
 
-  return layout('API Key Created', body);
+  return layout('API Key Created', body, '', { noindex: true });
 }
 
 export function dashboardPage(key: ApiKey, recentCount: number, origin: string): string {
@@ -781,7 +822,7 @@ export function dashboardPage(key: ApiKey, recentCount: number, origin: string):
   </div>
   ${footer()}`;
 
-  return layout('Dashboard', body);
+  return layout('Dashboard', body, '', { noindex: true });
 }
 
 export function errorPage(code: number, message: string): string {

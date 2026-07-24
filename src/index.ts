@@ -14,7 +14,13 @@ import {
   ghostTutorialPage,
   webflowTutorialPage,
   htmlTutorialPage,
+  TUTORIAL_INDEX,
 } from './docs/tutorial-pages';
+import {
+  hugoTutorialPage,
+  jekyllTutorialPage,
+  astroTutorialPage,
+} from './docs/tutorial-pages-ssg';
 import type { ApiKey, Env, OGParams, Tier } from './types';
 import { TIER_LIMITS } from './types';
 import { getCachedImage, putCachedImage } from './og-cache';
@@ -266,6 +272,38 @@ app.get('/docs/webflow', c =>
 app.get('/docs/html', c =>
   tutorialResponse(htmlTutorialPage(new URL(c.req.url).origin))
 );
+app.get('/docs/hugo', c =>
+  tutorialResponse(hugoTutorialPage(new URL(c.req.url).origin))
+);
+app.get('/docs/jekyll', c =>
+  tutorialResponse(jekyllTutorialPage(new URL(c.req.url).origin))
+);
+app.get('/docs/astro', c =>
+  tutorialResponse(astroTutorialPage(new URL(c.req.url).origin))
+);
+
+// ── SEO infrastructure ────────────────────────────────────────────────────────
+// /dashboard is keyed by secret query param — keep it out of search indexes.
+// /og stays crawlable: social crawlers must be able to fetch og:image URLs.
+app.get('/robots.txt', c => {
+  const origin = new URL(c.req.url).origin;
+  return new Response(
+    `User-agent: *\nDisallow: /dashboard\n\nSitemap: ${origin}/sitemap.xml\n`,
+    { headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=86400' } }
+  );
+});
+
+app.get('/sitemap.xml', c => {
+  const origin = new URL(c.req.url).origin;
+  const paths = ['/', '/register', ...Object.values(TUTORIAL_INDEX).map(t => t.href)];
+  const urls = paths
+    .map(p => `  <url><loc>${origin}${p}</loc></url>`)
+    .join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+  return new Response(xml, {
+    headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=86400' },
+  });
+});
 
 // ── Registration ──────────────────────────────────────────────────────────────
 app.get('/register', c => {
