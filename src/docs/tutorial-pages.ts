@@ -373,8 +373,13 @@ export function ghostTutorialPage(origin: string): string {
 <meta name="twitter:image"
       content="${origin}/og?title=Your%20Post%20Title&domain=yourblog.com&template=blog&key=sk_YOUR_KEY" />`;
 
-  const themeSnippet = `{{!-- default.hbs — inside <head>, ABOVE {{ghost_head}} --}}
-{{#is "post"}}{{#post}}
+  const themeLayoutSnippet = `{{!-- default.hbs — inside <head>, ABOVE {{ghost_head}} --}}
+{{{block "snapog-meta"}}}
+{{ghost_head}}`;
+
+  const themeSnippet = `{{!-- post.hbs — anywhere at the top level of the file --}}
+{{#contentFor "snapog-meta"}}
+{{#post}}
 <meta property="og:image"
       content="${origin}/og?title={{encode title}}&author={{encode primary_author.name}}&domain=yourblog.com&template=blog&key=sk_YOUR_KEY" />
 <meta property="og:image:width"  content="1200" />
@@ -382,7 +387,8 @@ export function ghostTutorialPage(origin: string): string {
 <meta name="twitter:card"  content="summary_large_image" />
 <meta name="twitter:image"
       content="${origin}/og?title={{encode title}}&domain=yourblog.com&template=blog&key=sk_YOUR_KEY" />
-{{/post}}{{/is}}`;
+{{/post}}
+{{/contentFor}}`;
 
   const content = [
     step('01', 'Get a free API key', `
@@ -405,10 +411,17 @@ export function ghostTutorialPage(origin: string): string {
           ${codeBlock('HTML — paste into Post header', perPostSnippet)}`),
     step('03', 'Option B — patch the theme once, every post is covered', `
           <p>
-            Download your active theme (<span class="step-path" style="margin:0;">Settings <b>→</b> Design &amp; branding <b>→</b> Change theme <b>→</b> download</span>),
-            open <code>default.hbs</code>, and add this inside <code>&lt;head&gt;</code>:
+            Download your active theme (<span class="step-path" style="margin:0;">Settings <b>→</b> Design &amp; branding <b>→</b> Change theme <b>→</b> download</span>)
+            and edit two files. First, declare a content block in
+            <code>default.hbs</code>, just above <code>{{ghost_head}}</code>:
           </p>
-          ${codeBlock('Handlebars — default.hbs', themeSnippet)}
+          ${codeBlock('Handlebars — default.hbs', themeLayoutSnippet)}
+          <p>
+            Then fill that block from <code>post.hbs</code>, where the post's data is
+            in scope (layout files like <code>default.hbs</code> can't reliably read
+            post attributes — that's why the tag lives here):
+          </p>
+          ${codeBlock('Handlebars — post.hbs', themeSnippet)}
           <p>
             Ghost's <code>{{encode}}</code> helper URL-encodes the post title for you,
             so titles with spaces and punctuation just work. Re-upload the theme zip
@@ -418,8 +431,9 @@ export function ghostTutorialPage(origin: string): string {
           <p>
             <code>{{ghost_head}}</code> outputs its own <code>og:image</code> when a
             post has a feature image. Most crawlers take the <em>first</em>
-            <code>og:image</code> tag they find — that's why the snippet goes
-            <strong>above</strong> <code>{{ghost_head}}</code>: the generated card wins.
+            <code>og:image</code> tag they find — that's why the
+            <code>{{{block}}}</code> placeholder goes <strong>above</strong>
+            <code>{{ghost_head}}</code>: the generated card wins.
             Prefer the feature photo for a specific post? Wrap the snippet in
             <code>{{#unless feature_image}} … {{/unless}}</code> so SnapOG only fills
             the gaps.
